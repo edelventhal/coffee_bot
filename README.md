@@ -1,6 +1,6 @@
 # coffee\_bot
 
-This is a fork of https://github.com/eli-lumos/node_express_skeleton .
+This is a modified dupe of https://github.com/eli-lumos/node_express_skeleton .
 
 It's a bot that randomly pairs two employees each Monday to go out for coffee. Simple.
 
