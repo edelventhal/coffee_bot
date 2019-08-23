@@ -1,4 +1,11 @@
-# node\_express\_skeleton
+# coffee\_bot
+
+This is a fork of https://github.com/eli-lumos/node_express_skeleton .
+
+It's a bot that randomly pairs two employees each Monday to go out for coffee. Simple.
+
+--------------------------------
+# Original readme
 
 This creates a simple MVC skelton for node.js servers on top of express and pug (formerly called jade).
 
