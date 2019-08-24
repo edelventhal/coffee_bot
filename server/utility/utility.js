@@ -84,7 +84,7 @@ var Utility = module.exports =
     //fetches a URL and returns the body to the callback
     getUrlBody: function( url, cb )
     {
-        if ( url.indexOf( "http://" ) !== 0 )
+        if ( url.indexOf( "://" ) < 0 )
         {
             url = "http://" + url;
         }
@@ -102,7 +102,7 @@ var Utility = module.exports =
             {
                 try
                 {
-                    var data = body;
+                    let data = body;
                     
                     if ( typeof( data ) === "string" )
                     {
@@ -121,5 +121,42 @@ var Utility = module.exports =
         {
             cb( false, e.message );
         });
+    },
+    
+    httpsPostJson: function( hostname, path, body, cb )
+    {
+        const options = {
+          hostname: hostname,
+          path: path,
+          method: "POST",
+          auth: "",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": body.length
+          }
+        }
+
+        const request = https.request( options, function( response )
+        {
+            response.on( "data", function( d )
+            {
+                let data = d;
+                
+                if ( typeof( data ) === "string" )
+                {
+                    data = JSON.parse( data );
+                }
+                
+                cb( true, data );
+            });
+        })
+
+        request.on( "error", function( error )
+        {
+            cb( false, error );
+        });
+
+        request.write( body );
+        request.end();
     }
 };
