@@ -4,26 +4,31 @@
 
 var database = require( "../database.js" );
 var slack = require( "../utility/slackApi.js" );
+const HISTORY_KEY = "history";
 
 //handles hanging onto global stuff
 var GlobalModel = module.exports =
 {
-    HISTORY_KEY: "history",
-    
     scheduleCoffee: function( cb )
     {
         database.get( HISTORY_KEY, function( historyString )
         {
             const pastData = historyString ? JSON.parse( historyString ) : { timesPaired: {}, pairs: {} };
             
-            slack.getUsersList( function( success, userData )
+            slack.getUsersList( function( error, userData )
             {
+                if ( error || !userData.members )
+                {
+                    cb( "Failed to get users from Slack: " + JSON.stringify( userData ) );
+                    return;
+                }
+                
                 const usernames = [];
                 let lowestCoffeeCount = -1;
                 Object.keys( userData.members ).forEach( function( userKey )
                 {
                     const user = userData.members[userKey];
-                    if ( !user.deleted && !user.is_bot )
+                    if ( !user.deleted && !user.is_bot && user.name !== "slackbot" ) //why isn't slackbot a bot?
                     {
                         usernames.push( user.name );
                     }
@@ -31,7 +36,7 @@ var GlobalModel = module.exports =
                     //we want the user(s) who have had coffee the least number of times
                     if ( lowestCoffeeCount < 0 || ( pastData.timesPaired[user.name] && pastData.timesPaired[user.name] < lowestCoffeeCount ) )
                     {
-                        lowestCoffeeCount = pastData.users[user.name];
+                        lowestCoffeeCount = pastData.timesPaired[user.name] || 0;
                     }
                 });
                 
@@ -46,11 +51,11 @@ var GlobalModel = module.exports =
                 
                 usernames.forEach( function( username )
                 {
-                    if ( pastData.timesPaired[username] <= lowestCoffeeCount )
+                    if ( ( pastData.timesPaired[username] || 0 ) <= lowestCoffeeCount )
                     {
                         lowestCountUsers.push( username );
                     }
-                }
+                });
                 
                 //now that we know which users have had coffee the least times, choose a user to have coffee
                 const primaryUserIndex = Math.floor( Math.random() * lowestCountUsers.length );
@@ -59,15 +64,14 @@ var GlobalModel = module.exports =
                 
                 //and then choose a partner for that user by finding the lowest pair count among them and other users
                 const primaryPairs = pastData.pairs[primaryUsername] || {};
-                const validPartners = [];
                 let lowestPartnerCount = -1;
                 usernames.forEach( function( username )
                 {
                     if ( username !== primaryUsername && ( lowestPartnerCount < 0 || ( ( primaryPairs[username] || 0 ) < lowestCoffeeCount ) ) )
                     {
-                        lowestPartnerCount = pastData.users[user.name];
+                        lowestPartnerCount = primaryPairs[username] || 0;
                     }
-                };
+                });
                 
                 const validPartners = [];
                 usernames.forEach( function( username )
@@ -77,14 +81,14 @@ var GlobalModel = module.exports =
                     {
                         validPartners.push( username );
                     }
-                }
+                });
                 
                 //finally, choose their partner
                 const partnerUsername = validPartners[Math.floor( Math.random() * validPartners.length )];
                 const partnerPairs = pastData.pairs[partnerUsername] || {};
                 
                 //have the Slackbot post the pairs
-                slack.post( "It's coffee time! Today it's @" + primaryUsername + " and @" + partnerUsername "!", function( success, error )
+                slack.post( "It's coffee time! Today it's @" + primaryUsername + " and @" + partnerUsername + "!", function( success, error )
                 {
                     if ( success )
                     {
@@ -93,7 +97,7 @@ var GlobalModel = module.exports =
                         pastData.timesPaired[partnerUsername] = ( pastData.timesPaired[partnerUsername] || 0 ) + 1;
                         pastData.pairs[primaryUsername] = ( primaryPairs[partnerUsername] || 0 ) + 1;
                         pastData.pairs[partnerUsername] = ( partnerPairs[primaryUsername] || 0 ) + 1;
-                        
+
                         //write the result to the db
                         database.set( HISTORY_KEY, JSON.stringify( pastData ), function( dbSuccess )
                         {

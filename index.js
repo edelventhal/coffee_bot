@@ -144,7 +144,7 @@ var Server = module.exports.Server =
     //when an error occurs in a route, this will get called. Edit if you want to handle errors in custom.
     _sendError: function( err, request )
     {
-        console.error( "Route resulted in an uncaught exception! " + err + "\n" + name + " -- params: " + JSON.stringify( request.query ) + "\n" + err.stack );
+        console.error( "Route resulted in an uncaught exception! " + err + "\nparams: " + JSON.stringify( request.query ) + "\n" + err.stack );
     },
 
     startServer: function( cb )

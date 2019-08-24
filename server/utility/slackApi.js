@@ -9,11 +9,12 @@ var SlackAPI = module.exports =
 {
     getUsersList: function( cb )
     {
-        utility.getUrlBody( "https://slack.com/api/users.list", cb );
+        utility.httpsPostJson( "https://slack.com/api/users.list", {}, process.env.SLACK_AUTH, cb );
     },
     
     post: function( message, cb )
     {
-        utility.httpsPostJson( "slack.com", "api/chat.postMessage", message, cb );
+        const payload = { channel: process.env.SLACK_CHANNEL, text: message };
+        utility.httpsPostJson( "https://slack.com/api/chat.postMessage", payload, process.env.SLACK_AUTH, cb );
     }
 }

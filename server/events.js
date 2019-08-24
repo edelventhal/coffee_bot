@@ -3,6 +3,8 @@
 /*global console*/
 /*global process*/
 
+const global = require( "./models/global_model.js" );
+
 var Events = module.exports =
 {
     fire: function( event, payload, cb )
@@ -21,7 +23,7 @@ var Events = module.exports =
     {
         pairUsers: function( payload, cb )
         {
-            
+            global.scheduleCoffee( cb );
         }
     }
 }

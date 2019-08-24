@@ -3,7 +3,7 @@
 /*global require*/
 
 var database = require( "../database.js" );
-var http = require( "http" );
+var request = require( "request" );
 
 //database-related utility functions
 var Utility = module.exports =
@@ -81,82 +81,31 @@ var Utility = module.exports =
         }.bind(this));
     },
     
-    //fetches a URL and returns the body to the callback
-    getUrlBody: function( url, cb )
+    httpsPostJson: function( url, data, auth, cb )
     {
-        if ( url.indexOf( "://" ) < 0 )
-        {
-            url = "http://" + url;
-        }
+        const headers = {
+            "Authorization": auth ? "Bearer " + auth : "",
+            "Content-type": "application/json"
+        };
         
-        http.get( url, function(res)
-        {
-            var body = "";
-            
-            res.on( "data", function(chunk)
-            {
-                body += chunk;
-            });
-            
-            res.on( "end", function()
-            {
-                try
-                {
-                    let data = body;
-                    
-                    if ( typeof( data ) === "string" )
-                    {
-                        data = JSON.parse( data );
-                    }
-                    
-                    cb( true, data );
-                }
-                catch(err)
-                {
-                    cb( false, "Couldn't parse JSON: " + body );
-                }
-                
-            });
-        }).on( "error", function(e)
-        {
-            cb( false, e.message );
-        });
-    },
-    
-    httpsPostJson: function( hostname, path, body, cb )
-    {
+        console.log( "Sending headers: ", headers );
+
+        const dataString = data ? JSON.stringify( data ) : "{}";
+
         const options = {
-          hostname: hostname,
-          path: path,
-          method: "POST",
-          auth: "",
-          headers: {
-            "Content-Type": "application/json",
-            "Content-Length": body.length
-          }
-        }
+            url: url,
+            method: 'POST',
+            headers: headers,
+            body: dataString
+        };
 
-        const request = https.request( options, function( response )
-        {
-            response.on( "data", function( d )
-            {
-                let data = d;
-                
-                if ( typeof( data ) === "string" )
-                {
-                    data = JSON.parse( data );
-                }
-                
-                cb( true, data );
-            });
-        })
-
-        request.on( "error", function( error )
-        {
-            cb( false, error );
-        });
-
-        request.write( body );
-        request.end();
+        request( options, function( error, response, body )
+         {
+             if ( !error && body && typeof( body === "string" ) )
+             {
+                 body = JSON.parse( body );
+             }
+             cb( error, body );
+         });
     }
 };
