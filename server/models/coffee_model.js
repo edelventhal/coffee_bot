@@ -5,11 +5,13 @@
 var database = require( "../database.js" );
 var slack = require( "../utility/slackApi.js" );
 const HISTORY_KEY = "history";
+const MESSAGE_KEY = "message";
+const DEFAULT_MESSAGE = ":coffee:It's coffee time!:coffee2:\nThis week it's PRIMARY and SECONDARY!\n\nGo see Charley to get your gift card, then go get coffee and take a selfie! :parrot-coffee:";
 
 //handles hanging onto global stuff
-var GlobalModel = module.exports =
+var CoffeeModel = module.exports =
 {
-    scheduleCoffee: function( cb )
+    scheduleCoffee: function( channel, cb )
     {
         database.get( HISTORY_KEY, function( historyString )
         {
@@ -88,36 +90,81 @@ var GlobalModel = module.exports =
                 const partnerUserId = validPartners[Math.floor( Math.random() * validPartners.length )];
                 const partnerPairs = pastData.pairs[partnerUserId] || {};
                 
-                //have the Slackbot post the pairs
-                slack.post( ":coffee:It's coffee time!:coffee2:\nThis week it's <@" + primaryUserId + "> and <@" + partnerUserId + ">!\n\nGo see Charley to get your gift card, then go get coffee and take a selfie! :parrot-coffee:", function( success, error )
+                database.get( MESSAGE_KEY, function( message )
                 {
-                    if ( success )
+                    message = message || DEFAULT_MESSAGE;
+                    message = message.replace( /PRIMARY/g, "<@" + primaryUserId + ">" );
+                    message = message.replace( /SECONDARY/g, "<@" + partnerUserId + ">" );
+                    
+                    //have the Slackbot post the pairs
+                    slack.post( message, channel, function( error, payload )
                     {
-                        //update the data to be written to the DB
-                        pastData.timesPaired[primaryUserId] = ( pastData.timesPaired[primaryUserId] || 0 ) + 1;
-                        pastData.timesPaired[partnerUserId] = ( pastData.timesPaired[partnerUserId] || 0 ) + 1;
-                        pastData.pairs[primaryUserId] = ( primaryPairs[partnerUserId] || 0 ) + 1;
-                        pastData.pairs[partnerUserId] = ( partnerPairs[primaryUserId] || 0 ) + 1;
-
-                        //write the result to the db
-                        database.set( HISTORY_KEY, JSON.stringify( pastData ), function( dbSuccess )
+                        if ( !error )
                         {
-                            if ( !dbSuccess )
+                            //update the data to be written to the DB
+                            pastData.timesPaired[primaryUserId] = ( pastData.timesPaired[primaryUserId] || 0 ) + 1;
+                            pastData.timesPaired[partnerUserId] = ( pastData.timesPaired[partnerUserId] || 0 ) + 1;
+                            pastData.pairs[primaryUserId] = ( primaryPairs[partnerUserId] || 0 ) + 1;
+                            pastData.pairs[partnerUserId] = ( partnerPairs[primaryUserId] || 0 ) + 1;
+
+                            //write the result to the db
+                            database.set( HISTORY_KEY, JSON.stringify( pastData ), function( dbSuccess )
                             {
-                                cb( "Failed to write to database." );
-                            }
-                            else
-                            {
-                                cb();
-                            }
-                        });
-                    }
-                    else
-                    {
-                        cb( error );
-                    }
+                                if ( !dbSuccess )
+                                {
+                                    cb( "Failed to write to database." );
+                                }
+                                else
+                                {
+                                    cb();
+                                }
+                            });
+                        }
+                        else
+                        {
+                            cb( error );
+                        }
+                    });
                 });
             });
+        });
+    },
+    
+    updateMessage: function( newMessage, cb )
+    {
+        database.set( MESSAGE_KEY, newMessage || DEFAULT_MESSAGE, function( success )
+        {
+            if ( !success )
+            {
+                cb( "Failed to write to database." );
+            }
+            else
+            {
+                cb();
+            }
+        });
+    },
+    
+    clearPairs: function( cb )
+    {
+        database.set( HISTORY_KEY, JSON.stringify( { timesPaired: {}, pairs: {} } ), function( success )
+        {
+            if ( !success )
+            {
+                cb( "Failed to write to database." );
+            }
+            else
+            {
+                cb();
+            }
+        });
+    },
+    
+    getMessage: function( cb )
+    {
+        database.get( MESSAGE_KEY, function( message )
+        {
+            cb( message || DEFAULT_MESSAGE );
         });
     }
 };

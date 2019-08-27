@@ -1,9 +1,12 @@
-/*global require*/
-/*global module*/
-/*global console*/
-/*global process*/
+/*coffee require*/
+/*coffee module*/
+/*coffee console*/
+/*coffee process*/
 
-const global = require( "./models/global_model.js" );
+//endpoints for all scheduled events
+//this should just be combined with schedule_controller probably
+
+const coffee = require( "./models/coffee_model.js" );
 
 var Events = module.exports =
 {
@@ -23,7 +26,7 @@ var Events = module.exports =
     {
         pairUsers: function( payload, cb )
         {
-            global.scheduleCoffee( cb );
+            coffee.scheduleCoffee( payload, cb );
         }
     }
 }

@@ -57,18 +57,18 @@ var server =
         cb();
     },
     
-    testMyRoute: function( cb )
+    updateMessage: function( newMessage, cb )
     {
-        this._sendRequest( "test/myRoute", cb );
+        this._sendRequest( "coffee/updateMessage", cb, { message: newMessage } );
     },
     
-    testUseParameter: function( idParam, cb )
+    scheduleCoffee: function( channel, cb )
     {
-        this._sendRequest( "test/useParameter", cb, { id: idParam } );
+        this._sendRequest( "coffee/scheduleCoffee", cb, { channel: channel } );
     },
     
-    testInvalidRoute: function( cb )
+    clearPairs: function( cb )
     {
-        this._sendRequest( "test/invalid", cb );
+        this._sendRequest( "coffee/clearPairs", cb );
     }
 };

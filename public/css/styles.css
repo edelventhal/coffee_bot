@@ -19,6 +19,10 @@ body {
     -webkit-appearance:none;
 }
 
+button {
+    font-size:20px;
+}
+
 input:disabled {
     background-color: #dddddd;
     -webkit-appearance: none;
