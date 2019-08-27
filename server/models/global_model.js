@@ -31,12 +31,12 @@ var GlobalModel = module.exports =
                     if ( !user.deleted && !user.is_bot && user.name !== "slackbot" ) //why isn't slackbot a bot?
                     {
                         usernames.push( user.name );
-                    }
-                    
-                    //we want the user(s) who have had coffee the least number of times
-                    if ( lowestCoffeeCount < 0 || ( pastData.timesPaired[user.name] && pastData.timesPaired[user.name] < lowestCoffeeCount ) )
-                    {
-                        lowestCoffeeCount = pastData.timesPaired[user.name] || 0;
+                        
+                        //we want the user(s) who have had coffee the least number of times
+                        if ( lowestCoffeeCount < 0 || ( pastData.timesPaired[user.name] && pastData.timesPaired[user.name] < lowestCoffeeCount ) )
+                        {
+                            lowestCoffeeCount = pastData.timesPaired[user.name] || 0;
+                        }
                     }
                 });
                 
