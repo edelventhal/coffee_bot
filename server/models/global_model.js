@@ -32,7 +32,7 @@ var GlobalModel = module.exports =
                     {
                         usernames.push( user.name );
                         
-                        //we want the user(s) who have had coffee the least number of times
+                        //store the least number of times a user has had coffee
                         if ( lowestCoffeeCount < 0 || ( pastData.timesPaired[user.name] && pastData.timesPaired[user.name] < lowestCoffeeCount ) )
                         {
                             lowestCoffeeCount = pastData.timesPaired[user.name] || 0;
@@ -67,6 +67,7 @@ var GlobalModel = module.exports =
                 let lowestPartnerCount = -1;
                 usernames.forEach( function( username )
                 {
+                    //store the least number of times a partner has had coffee with this user
                     if ( username !== primaryUsername && ( lowestPartnerCount < 0 || ( ( primaryPairs[username] || 0 ) < lowestCoffeeCount ) ) )
                     {
                         lowestPartnerCount = primaryPairs[username] || 0;
