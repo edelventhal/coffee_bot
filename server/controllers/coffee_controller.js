@@ -35,7 +35,8 @@ module.exports =
         }
         else
         {
-            coffee.scheduleCoffee( request.query.channel, function( error )
+            console.log( "in controller with dry run: " + request.query.dryRun );
+            coffee.scheduleCoffee( request.query.channel, !!request.query.dryRun, function( error )
             {
                 if ( error )
                 {

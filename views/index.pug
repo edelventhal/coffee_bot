@@ -12,11 +12,13 @@ body
     br
     button(id='messageButton' type='button' onClick='index.updateMessage("messageText")' disabled=true) Save Edited Message
     br
-    button(type='button' onClick='index.scheduleCoffee("channelSelect")') Schedule Coffee Now
+    button(type='button' onClick='index.scheduleCoffee("channelSelect", "dryRunCheckbox")') Schedule Coffee Now
     | &nbsp; to channel:
     select(id='channelSelect')
         option(value='C6KCQ664Q') #general
         option(value='CK8C04U5U') #diversitytaskforce
+    | &nbsp; Dry run
+    input(id='dryRunCheckbox' type='checkbox')
     br
     button(type='button' onClick='index.clearPairs()') Clear Stored Pairs
     br

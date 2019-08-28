@@ -11,7 +11,7 @@ const DEFAULT_MESSAGE = ":coffee:It's coffee time!:coffee2:\nThis week it's PRIM
 //handles hanging onto global stuff
 var CoffeeModel = module.exports =
 {
-    scheduleCoffee: function( channel, cb )
+    scheduleCoffee: function( channel, dryRun, cb )
     {
         database.get( HISTORY_KEY, function( historyString )
         {
@@ -93,8 +93,11 @@ var CoffeeModel = module.exports =
                 database.get( MESSAGE_KEY, function( message )
                 {
                     message = message || DEFAULT_MESSAGE;
-                    message = message.replace( /PRIMARY/g, "<@" + primaryUserId + ">" );
-                    message = message.replace( /SECONDARY/g, "<@" + partnerUserId + ">" );
+                    if ( !dryRun )
+                    {
+                        message = message.replace( /PRIMARY/g, "<@" + primaryUserId + ">" );
+                        message = message.replace( /SECONDARY/g, "<@" + partnerUserId + ">" );
+                    }
                     
                     //have the Slackbot post the pairs
                     slack.post( message, channel, function( error, payload )
@@ -102,10 +105,13 @@ var CoffeeModel = module.exports =
                         if ( !error )
                         {
                             //update the data to be written to the DB
-                            pastData.timesPaired[primaryUserId] = ( pastData.timesPaired[primaryUserId] || 0 ) + 1;
-                            pastData.timesPaired[partnerUserId] = ( pastData.timesPaired[partnerUserId] || 0 ) + 1;
-                            pastData.pairs[primaryUserId] = ( primaryPairs[partnerUserId] || 0 ) + 1;
-                            pastData.pairs[partnerUserId] = ( partnerPairs[primaryUserId] || 0 ) + 1;
+                            if ( !dryRun )
+                            {
+                                pastData.timesPaired[primaryUserId] = ( pastData.timesPaired[primaryUserId] || 0 ) + 1;
+                                pastData.timesPaired[partnerUserId] = ( pastData.timesPaired[partnerUserId] || 0 ) + 1;
+                                pastData.pairs[primaryUserId] = ( primaryPairs[partnerUserId] || 0 ) + 1;
+                                pastData.pairs[partnerUserId] = ( partnerPairs[primaryUserId] || 0 ) + 1;
+                            }
 
                             //write the result to the db
                             database.set( HISTORY_KEY, JSON.stringify( pastData ), function( dbSuccess )

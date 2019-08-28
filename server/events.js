@@ -26,7 +26,7 @@ var Events = module.exports =
     {
         pairUsers: function( payload, cb )
         {
-            coffee.scheduleCoffee( payload, cb );
+            coffee.scheduleCoffee( payload, false, cb );
         }
     }
 }
