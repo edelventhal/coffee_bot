@@ -97,8 +97,8 @@ var CoffeeModel = module.exports =
                     message = message || DEFAULT_MESSAGE;
                     if ( !dryRun )
                     {
-                        message = message.replace( /PRIMARY/g, primaryUserId );
-                        message = message.replace( /SECONDARY/g, partnerUserId );
+                        message = message.replace( /PRIMARY/g, `<@${primaryUserId}>` );
+                        message = message.replace( /SECONDARY/g, `<@${partnerUserId}>` );
                     }
                     
                     //have the Slackbot post the pairs
