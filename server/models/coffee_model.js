@@ -8,6 +8,7 @@ const HISTORY_KEY = "history";
 const MESSAGE_KEY = "message";
 const DEFAULT_MESSAGE = ":coffee:It's coffee time!:coffee2:\nThis week it's PRIMARY and SECONDARY!\n\nGo see Charley to get your gift card, then go get coffee and take a selfie! :parrot-coffee:";
 const VALID_TIMEZONES = ["America/Los_Angeles"];
+const USE_VALID_TIMEZONES = false;
 
 //handles hanging onto global stuff
 var CoffeeModel = module.exports =
@@ -32,7 +33,8 @@ var CoffeeModel = module.exports =
                 {
                     const user = userData.members[userKey];
                     if ( !user.deleted && !user.is_bot && !user.is_app_user
-                        && user.name !== "slackbot" && VALID_TIMEZONES.indexOf( user.tz ) >= 0 ) //why isn't slackbot a bot?
+                        && user.name !== "slackbot" //why isn't slackbot a bot?
+                        && ( !USE_VALID_TIMEZONES || VALID_TIMEZONES.indexOf( user.tz ) >= 0 ) )
                     {
                         userIds.push( user.id );
                         
