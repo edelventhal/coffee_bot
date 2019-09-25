@@ -2,49 +2,32 @@
 /*global console*/
 /*global require*/
 
-var database = require( "../database.js" );
-var slack = require( "../utility/slackApi.js" );
+const database = require( "../database.js" );
+const slack = require( "../utility/slackApi.js" );
+const users = require( "./users_model.js" );
+const constants = require( "../constants.js" );
+
 const HISTORY_KEY = "history";
 const MESSAGE_KEY = "message";
-const DEFAULT_MESSAGE = ":coffee:It's coffee time!:coffee2:\nThis week it's PRIMARY and SECONDARY!\n\nGo see Charley to get your gift card, then go get coffee and take a selfie! :parrot-coffee:";
-const VALID_TIMEZONES = ["America/Los_Angeles"];
-const USE_VALID_TIMEZONES = false;
 
 //handles hanging onto global stuff
-var CoffeeModel = module.exports =
+const CoffeeModel = module.exports =
 {
-    scheduleCoffee: function( channel, dryRun, cb )
+    scheduleCoffee: function( channel, dryRun, cb, user1Id, user2Id )
     {
         database.get( HISTORY_KEY, function( historyString )
         {
             const pastData = historyString ? JSON.parse( historyString ) : { timesPaired: {}, pairs: {} };
             
-            slack.getUsersList( function( error, userData )
+            users.getUsers( function( error, userData )
             {
-                if ( error || !userData.members )
+                if ( error )
                 {
-                    cb( "Failed to get users from Slack: " + JSON.stringify( userData ) );
+                    cb( error );
                     return;
                 }
                 
-                const userIds = [];
-                let lowestCoffeeCount = -1;
-                Object.keys( userData.members ).forEach( function( userKey )
-                {
-                    const user = userData.members[userKey];
-                    if ( !user.deleted && !user.is_bot && !user.is_app_user
-                        && user.name !== "slackbot" //why isn't slackbot a bot?
-                        && ( !USE_VALID_TIMEZONES || VALID_TIMEZONES.indexOf( user.tz ) >= 0 ) )
-                    {
-                        userIds.push( user.id );
-                        
-                        //store the least number of times a user has had coffee
-                        if ( lowestCoffeeCount < 0 || ( pastData.timesPaired[user.id] && pastData.timesPaired[user.id] < lowestCoffeeCount ) )
-                        {
-                            lowestCoffeeCount = pastData.timesPaired[user.id] || 0;
-                        }
-                    }
-                });
+                const userIds = Object.keys( userData );
                 
                 if ( userIds.length < 2 )
                 {
@@ -52,9 +35,18 @@ var CoffeeModel = module.exports =
                     return;
                 }
                 
+                //find the lowest count of times any users has gotten coffee
+                let lowestCoffeeCount = -1;
+                userIds.forEach( function( userId )
+                {
+                    if ( lowestCoffeeCount < 0 || ( pastData.timesPaired[userId] && pastData.timesPaired[userId] < lowestCoffeeCount ) )
+                    {
+                        lowestCoffeeCount = pastData.timesPaired[userId] || 0;
+                    }
+                });
+                
                 //find the users that have had coffee the least number of times so we can choose one of them
                 const lowestCountUsers = [];
-                
                 userIds.forEach( function( userId )
                 {
                     if ( ( pastData.timesPaired[userId] || 0 ) <= lowestCoffeeCount )
@@ -65,7 +57,7 @@ var CoffeeModel = module.exports =
                 
                 //now that we know which users have had coffee the least times, choose a user to have coffee
                 const primaryUserIndex = Math.floor( Math.random() * lowestCountUsers.length );
-                const primaryUserId = lowestCountUsers[primaryUserIndex];
+                const primaryUserId = user1Id || lowestCountUsers[primaryUserIndex];
                 lowestCountUsers.splice( primaryUserIndex, 1 );
                 
                 //and then choose a partner for that user by finding the lowest pair count among them and other users
@@ -91,17 +83,14 @@ var CoffeeModel = module.exports =
                 });
                 
                 //finally, choose their partner
-                const partnerUserId = validPartners[Math.floor( Math.random() * validPartners.length )];
+                const partnerUserId = user2Id || validPartners[Math.floor( Math.random() * validPartners.length )];
                 const partnerPairs = pastData.pairs[partnerUserId] || {};
                 
                 database.get( MESSAGE_KEY, function( message )
                 {
-                    message = message || DEFAULT_MESSAGE;
-                    if ( !dryRun )
-                    {
-                        message = message.replace( /PRIMARY/g, `<@${primaryUserId}>` );
-                        message = message.replace( /SECONDARY/g, `<@${partnerUserId}>` );
-                    }
+                    message = message || constants.DEFAULT_MESSAGE;
+                    message = message.replace( /PRIMARY/g, ( dryRun ? userData[primaryUserId] : `<@${primaryUserId}>` ) );
+                    message = message.replace( /SECONDARY/g, ( dryRun ? userData[partnerUserId] : `<@${partnerUserId}>` ) );
                     
                     //have the Slackbot post the pairs
                     slack.post( message, channel, function( error, payload )
@@ -142,7 +131,7 @@ var CoffeeModel = module.exports =
     
     updateMessage: function( newMessage, cb )
     {
-        database.set( MESSAGE_KEY, newMessage || DEFAULT_MESSAGE, function( success )
+        database.set( MESSAGE_KEY, newMessage || constants.DEFAULT_MESSAGE, function( success )
         {
             if ( !success )
             {
@@ -174,7 +163,7 @@ var CoffeeModel = module.exports =
     {
         database.get( MESSAGE_KEY, function( message )
         {
-            cb( message || DEFAULT_MESSAGE );
+            cb( message || constants.DEFAULT_MESSAGE );
         });
     }
 };

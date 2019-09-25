@@ -62,9 +62,9 @@ var server =
         this._sendRequest( "coffee/updateMessage", cb, { message: newMessage } );
     },
     
-    scheduleCoffee: function( channel, dryRun, cb )
+    scheduleCoffee: function( channel, dryRun, user1, user2, cb )
     {
-        this._sendRequest( "coffee/scheduleCoffee", cb, { channel: channel, dryRun: dryRun } );
+        this._sendRequest( "coffee/scheduleCoffee", cb, { channel: channel, dryRun: dryRun, user1: user1, user2: user2 } );
     },
     
     clearPairs: function( cb )

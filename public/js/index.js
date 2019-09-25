@@ -13,11 +13,17 @@ var index =
         server.updateMessage( messageText.value, this._showResult );
     },
     
-    scheduleCoffee: function( channelSelectId, dryRunCheckboxId )
+    scheduleCoffee: function( channelSelectId, dryRunCheckboxId, user1SelectId, user2SelectId )
     {
         const channelSelect = document.getElementById( channelSelectId );
         const dryRunCheckbox = document.getElementById( dryRunCheckboxId );
-        server.scheduleCoffee( channelSelect.options[channelSelect.selectedIndex].value, dryRunCheckbox.checked, this._showResult );
+        const user1Select = document.getElementById( user1SelectId );
+        const user2Select = document.getElementById( user2SelectId );
+        server.scheduleCoffee( channelSelect.options[channelSelect.selectedIndex].value,
+                               dryRunCheckbox.checked,
+                               user1Select.options[user1Select.selectedIndex].value,
+                               user2Select.options[user2Select.selectedIndex].value,
+                               this._showResult );
     },
     
     clearPairs: function()
