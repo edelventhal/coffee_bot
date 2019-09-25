@@ -19,7 +19,7 @@ const UsersModel = module.exports =
             {
                 const user = userData.members[userKey];
                 if ( !user.deleted && !user.is_bot && !user.is_app_user
-                    && user.name !== "slackbot" //why isn't slackbot a bot?
+                    && constants.EXCLUDED_USERS.indexOf(user.name) < 0
                     && ( !constants.USE_VALID_TIMEZONES || constants.VALID_TIMEZONES.indexOf( user.tz ) >= 0 ) )
                 {
                     users[user.id] = user.name;

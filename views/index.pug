@@ -21,12 +21,13 @@ body
     input(id='dryRunCheckbox' type='checkbox')
     | &nbsp; Primary Person
     select(id='user1Select')
-        each val, key in customData.users
-            option(value=key) #{val}
+        - const sortedKeys = Object.keys( customData.users ).sort((a,b)=>{return customData.users[a] > customData.users[b] ? 1 : -1});
+        each key in sortedKeys
+            option(value=key) #{customData.users[key].trim()}
     | &nbsp; Secondary Person
     select(id='user2Select')
-        each val, key in customData.users
-            option(value=key) #{val}
+        each key in sortedKeys
+            option(value=key) #{customData.users[key].trim()}
     br
     button(type='button' onClick='index.clearPairs()') Clear Stored Pairs
     br
