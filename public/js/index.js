@@ -35,6 +35,63 @@ var index =
         }
     },
     
+    removeSelectedExcludedUser: function( addExcludedUsersSelectId, removeExcludedUsersSelectId, allUsersString, sortedUserKeysString )
+    {
+        const removeExcludedUsersSelect = document.getElementById( removeExcludedUsersSelectId );
+        if ( removeExcludedUsersSelect.selectedIndex > 0 )
+        {
+            server.removeExcludedUser( removeExcludedUsersSelect.options[removeExcludedUsersSelect.selectedIndex].value,
+                this._showUpdatedExcludedUsersResult.bind( this, addExcludedUsersSelectId, removeExcludedUsersSelectId,
+                    JSON.parse(allUsersString), JSON.parse(sortedUserKeysString) ) );
+        }
+    },
+    
+    addSelectedExcludedUser: function( addExcludedUsersSelectId, removeExcludedUsersSelectId, allUsersString, sortedUserKeysString )
+    {
+        console.log( "We tryin' it" );
+        const addExcludedUsersSelect = document.getElementById( addExcludedUsersSelectId );
+        if ( addExcludedUsersSelect.selectedIndex > 0 )
+        {
+            server.addExcludedUser( addExcludedUsersSelect.options[addExcludedUsersSelect.selectedIndex].value,
+                this._showUpdatedExcludedUsersResult.bind( this, addExcludedUsersSelectId, removeExcludedUsersSelectId,
+                    JSON.parse(allUsersString), JSON.parse(sortedUserKeysString) ) );
+        }
+    },
+    
+    //this is the worst thing ever, maybe?
+    refreshExcludedUserSelects: function( addExcludedUsersSelectId, removeExcludedUsersSelectId, excludedUsers, allUsers, sortedUserKeys )
+    {
+        const addExcludedUsersSelect = document.getElementById( addExcludedUsersSelectId );
+        const removeExcludedUsersSelect = document.getElementById( removeExcludedUsersSelectId );
+                
+        let removeHTML = '<option value="">Select User To Remove</option>';
+        Object.keys( excludedUsers ).forEach( function( userId )
+        {
+            removeHTML += '<option value="' + userId + '">' + ( allUsers[userId] ? allUsers[userId] : userId ) + '</option>';
+        });
+        removeExcludedUsersSelect.innerHTML = removeHTML;
+        
+        let addHTML = '<option value="">Select User To Add</option>';
+        for (let keyIndex = 0; keyIndex < sortedUserKeys.length; keyIndex++)
+        {
+            const userId = sortedUserKeys[keyIndex];
+            if (keyIndex > 0 && !excludedUsers[userId])
+            {
+                addHTML += '<option value="' + userId + '">' + ( allUsers[userId] ? allUsers[userId] : userId ) + '</option>';
+            }
+        };
+        addExcludedUsersSelect.innerHTML = addHTML;
+    },
+    
+    _showUpdatedExcludedUsersResult: function( addExcludedUsersSelectId, removeExcludedUsersSelectId, allUsers, sortedUserKeys, result )
+    {
+        if ( result.success )
+        {
+            this.refreshExcludedUserSelects( addExcludedUsersSelectId, removeExcludedUsersSelectId, result.excludedUsers, allUsers, sortedUserKeys );
+        }
+        this._showResult( result );
+    },
+    
     _showResult: function( result )
     {
         var resultStr = result;

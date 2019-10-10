@@ -25,15 +25,20 @@ const PageController = module.exports =
         {
             users.getUsers( function( error, userData )
             {
-                if ( error )
+                users.getExcludedUsers( function( excludedUsers )
                 {
-                    console.log( error );
-                }
+                    if ( error )
+                    {
+                        console.log( error );
+                    }
                 
-                userData = userData || {};
-                userData[constants.RANDOM_USER_ID] = constants.RANDOM_USER_NAME;
+                    userData = userData || {};
+                    userData[constants.RANDOM_USER_ID] = constants.RANDOM_USER_NAME;
+                    
+                    excludedUsers = excludedUsers || {};
                 
-                response.render( "index", { customData: { "message": message, "users": userData } } );
+                    response.render( "index", { customData: { "message": message, "users": userData, "excludedUsers": excludedUsers } } );
+                });
             });
         });
     }

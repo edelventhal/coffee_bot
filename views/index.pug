@@ -21,7 +21,7 @@ body
     input(id='dryRunCheckbox' type='checkbox')
     | &nbsp; Primary Person
     select(id='user1Select')
-        - const sortedKeys = Object.keys( customData.users ).sort((a,b)=>{return customData.users[a] > customData.users[b] ? 1 : -1});
+        - const sortedKeys = Object.keys( customData.users ).sort((a,b)=>{return customData.users[a].toLowerCase() > customData.users[b].toLowerCase() ? 1 : -1});
         each key in sortedKeys
             option(value=key) #{customData.users[key].trim()}
     | &nbsp; Secondary Person
@@ -30,5 +30,21 @@ body
             option(value=key) #{customData.users[key].trim()}
     br
     button(type='button' onClick='index.clearPairs()') Clear Stored Pairs
+    br
+    | Change Excluded Users:
+    - const excludedUsersOnChangeParams = "'addExcludedUsersSelect', 'removeExcludedUsersSelect', '" + JSON.stringify(customData.users) + "', '" + JSON.stringify(sortedKeys) + "'";
+    select(id='removeExcludedUsersSelect' onChange='index.removeSelectedExcludedUser(' + excludedUsersOnChangeParams + ')')
+        option(value='') Select User To Remove
+        each val, key in customData.excludedUsers
+            option(value=key) #{customData.users[key] ? customData.users[key].trim() : key}
+    | &nbsp;
+    select(id='addExcludedUsersSelect' onChange='index.addSelectedExcludedUser(' + excludedUsersOnChangeParams + ')')
+        option(value='') Select User To Add
+        - for (let keyIndex = 0; keyIndex < sortedKeys.length; keyIndex++) {
+            - const key = sortedKeys[keyIndex];
+            - if (keyIndex > 0 && !customData.excludedUsers[key]) {
+                option(value=key) #{customData.users[key] ? customData.users[key].trim() : key}
+            - }
+        - }
     br
     div(id='result')

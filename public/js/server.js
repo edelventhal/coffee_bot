@@ -70,5 +70,16 @@ var server =
     clearPairs: function( cb )
     {
         this._sendRequest( "coffee/clearPairs", cb );
+    },
+    
+    removeExcludedUser: function( userId, cb )
+    {
+        this._sendRequest( "users/exclusions/remove", cb, { user: userId } );
+    },
+    
+    addExcludedUser: function( userId, cb )
+    {
+        console.log( "Call the endopoint" );
+        this._sendRequest( "users/exclusions/add", cb, { user: userId } );
     }
 };

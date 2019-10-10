@@ -35,94 +35,99 @@ const CoffeeModel = module.exports =
                     return;
                 }
                 
-                //find the lowest count of times any users has gotten coffee
-                let lowestCoffeeCount = -1;
-                userIds.forEach( function( userId )
+                users.getExcludedUsers( function( excludedUsers )
                 {
-                    if ( lowestCoffeeCount < 0 || ( pastData.timesPaired[userId] && pastData.timesPaired[userId] < lowestCoffeeCount ) )
+                    //find the lowest count of times any users has gotten coffee
+                    let lowestCoffeeCount = -1;
+                    userIds.forEach( function( userId )
                     {
-                        lowestCoffeeCount = pastData.timesPaired[userId] || 0;
-                    }
-                });
+                        if ( !excludedUsers[userId] && ( lowestCoffeeCount < 0 || ( pastData.timesPaired[userId] && pastData.timesPaired[userId] < lowestCoffeeCount ) ) )
+                        {
+                            lowestCoffeeCount = pastData.timesPaired[userId] || 0;
+                        }
+                    });
                 
-                //find the users that have had coffee the least number of times so we can choose one of them
-                const lowestCountUsers = [];
-                userIds.forEach( function( userId )
-                {
-                    if ( ( pastData.timesPaired[userId] || 0 ) <= lowestCoffeeCount )
+                    //find the users that have had coffee the least number of times so we can choose one of them
+                    const lowestCountUsers = [];
+                    userIds.forEach( function( userId )
                     {
-                        lowestCountUsers.push( userId );
-                    }
-                });
+                        if ( ( pastData.timesPaired[userId] || 0 ) <= lowestCoffeeCount && !excludedUsers[userId] )
+                        {
+                            lowestCountUsers.push( userId );
+                        }
+                    });
                 
-                //now that we know which users have had coffee the least times, choose a user to have coffee
-                const primaryUserIndex = Math.floor( Math.random() * lowestCountUsers.length );
-                const primaryUserId = user1Id || lowestCountUsers[primaryUserIndex];
-                lowestCountUsers.splice( primaryUserIndex, 1 );
+                    //now that we know which users have had coffee the least times, choose a user to have coffee
+                    const primaryUserIndex = Math.floor( Math.random() * lowestCountUsers.length );
+                    const primaryUserId = user1Id || lowestCountUsers[primaryUserIndex];
+                    lowestCountUsers.splice( primaryUserIndex, 1 );
                 
-                //and then choose a partner for that user by finding the lowest pair count among them and other users
-                const primaryPairs = pastData.pairs[primaryUserId] || {};
-                let lowestPartnerCount = -1;
-                userIds.forEach( function( userId )
-                {
-                    //store the least number of times a partner has had coffee with this user
-                    if ( userId !== primaryUserId && ( lowestPartnerCount < 0 || ( ( primaryPairs[userId] || 0 ) < lowestCoffeeCount ) ) )
+                    //and then choose a partner for that user by finding the lowest pair count among them and other users
+                    const primaryPairs = pastData.pairs[primaryUserId] || {};
+                    let lowestPartnerCount = -1;
+                    userIds.forEach( function( userId )
                     {
-                        lowestPartnerCount = primaryPairs[userId] || 0;
-                    }
-                });
+                        //store the least number of times a partner has had coffee with this user
+                        if ( !excludedUsers[userId] && userId !== primaryUserId && ( lowestPartnerCount < 0 || ( ( primaryPairs[userId] || 0 ) < lowestCoffeeCount ) ) )
+                        {
+                            lowestPartnerCount = primaryPairs[userId] || 0;
+                        }
+                    });
                 
-                const validPartners = [];
-                userIds.forEach( function( userId )
-                {
-                    const pairCount = ( primaryPairs[userId] || 0 );
-                    if ( userId !== primaryUserId && pairCount <= lowestPartnerCount )
+                    const validPartners = [];
+                    userIds.forEach( function( userId )
                     {
-                        validPartners.push( userId );
-                    }
-                });
+                        const pairCount = ( primaryPairs[userId] || 0 );
+                        if ( userId !== primaryUserId && pairCount <= lowestPartnerCount && !excludedUsers[userId] )
+                        {
+                            validPartners.push( userId );
+                        }
+                    });
                 
-                //finally, choose their partner
-                const partnerUserId = user2Id || validPartners[Math.floor( Math.random() * validPartners.length )];
-                const partnerPairs = pastData.pairs[partnerUserId] || {};
+                    //finally, choose their partner
+                    const partnerUserId = user2Id || validPartners[Math.floor( Math.random() * validPartners.length )];
+                    const partnerPairs = pastData.pairs[partnerUserId] || {};
                 
-                database.get( MESSAGE_KEY, function( message )
-                {
-                    message = message || constants.DEFAULT_MESSAGE;
-                    message = message.replace( /PRIMARY/g, ( dryRun ? userData[primaryUserId] : `<@${primaryUserId}>` ) );
-                    message = message.replace( /SECONDARY/g, ( dryRun ? userData[partnerUserId] : `<@${partnerUserId}>` ) );
+                    database.get( MESSAGE_KEY, function( message )
+                    {
+                        message = message || constants.DEFAULT_MESSAGE;
+                        message = message.replace( /PRIMARY/g, ( dryRun ? userData[primaryUserId] : `<@${primaryUserId}>` ) );
+                        message = message.replace( /SECONDARY/g, ( dryRun ? userData[partnerUserId] : `<@${partnerUserId}>` ) );
                     
-                    //have the Slackbot post the pairs
-                    slack.post( message, channel, function( error, payload )
-                    {
-                        if ( !error )
+                        //have the Slackbot post the pairs
+                        slack.post( message, channel, function( error, payload )
                         {
-                            //update the data to be written to the DB
-                            if ( !dryRun )
+                            if ( !error )
                             {
-                                pastData.timesPaired[primaryUserId] = ( pastData.timesPaired[primaryUserId] || 0 ) + 1;
-                                pastData.timesPaired[partnerUserId] = ( pastData.timesPaired[partnerUserId] || 0 ) + 1;
-                                pastData.pairs[primaryUserId] = ( primaryPairs[partnerUserId] || 0 ) + 1;
-                                pastData.pairs[partnerUserId] = ( partnerPairs[primaryUserId] || 0 ) + 1;
-                            }
+                                //update the data to be written to the DB
+                                if ( !dryRun )
+                                {
+                                    pastData.timesPaired[primaryUserId] = ( pastData.timesPaired[primaryUserId] || 0 ) + 1;
+                                    pastData.timesPaired[partnerUserId] = ( pastData.timesPaired[partnerUserId] || 0 ) + 1;
+                                    pastData.pairs[primaryUserId] = typeof(pastData.pairs[primaryUserId]) === 'object' ? pastData.pairs[primaryUserId] : {};
+                                    pastData.pairs[partnerUserId] = typeof(pastData.pairs[partnerUserId]) === 'object' ? pastData.pairs[partnerUserId] : {};
+                                    pastData.pairs[primaryUserId][partnerUserId] = ( pastData.pairs[primaryUserId][partnerUserId] || 0 ) + 1;
+                                    pastData.pairs[partnerUserId][primaryUserId] = ( pastData.pairs[partnerUserId][primaryUserId] || 0 ) + 1;
+                                }
 
-                            //write the result to the db
-                            database.set( HISTORY_KEY, JSON.stringify( pastData ), function( dbSuccess )
+                                //write the result to the db
+                                database.set( HISTORY_KEY, JSON.stringify( pastData ), function( dbSuccess )
+                                {
+                                    if ( !dbSuccess )
+                                    {
+                                        cb( "Failed to write to database." );
+                                    }
+                                    else
+                                    {
+                                        cb();
+                                    }
+                                });
+                            }
+                            else
                             {
-                                if ( !dbSuccess )
-                                {
-                                    cb( "Failed to write to database." );
-                                }
-                                else
-                                {
-                                    cb();
-                                }
-                            });
-                        }
-                        else
-                        {
-                            cb( error );
-                        }
+                                cb( error );
+                            }
+                        });
                     });
                 });
             });
