@@ -41,9 +41,10 @@ const CoffeeModel = module.exports =
                     let lowestCoffeeCount = -1;
                     userIds.forEach( function( userId )
                     {
-                        if ( !excludedUsers[userId] && ( lowestCoffeeCount < 0 || ( pastData.timesPaired[userId] && pastData.timesPaired[userId] < lowestCoffeeCount ) ) )
+                        const pairedCount = pastData.timesPaired[userId] || 0;
+                        if ( !excludedUsers[userId] && ( lowestCoffeeCount < 0 || pairedCount < lowestCoffeeCount ) )
                         {
-                            lowestCoffeeCount = pastData.timesPaired[userId] || 0;
+                            lowestCoffeeCount = pairedCount;
                         }
                     });
                 

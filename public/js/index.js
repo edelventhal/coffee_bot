@@ -48,7 +48,6 @@ var index =
     
     addSelectedExcludedUser: function( addExcludedUsersSelectId, removeExcludedUsersSelectId, allUsersString, sortedUserKeysString )
     {
-        console.log( "We tryin' it" );
         const addExcludedUsersSelect = document.getElementById( addExcludedUsersSelectId );
         if ( addExcludedUsersSelect.selectedIndex > 0 )
         {
