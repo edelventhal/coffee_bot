@@ -64,14 +64,17 @@ const CoffeeModel = module.exports =
                     lowestCountUsers.splice( primaryUserIndex, 1 );
                 
                     //and then choose a partner for that user by finding the lowest pair count among them and other users
-                    const primaryPairs = pastData.pairs[primaryUserId] || {};
+                    //...this weird ternary below is to deal with an existing bug where we stored numbers in the db instead of objects
+                    const primaryPairs = typeof( pastData.pairs[primaryUserId] ) === 'object' ? pastData.pairs[primaryUserId] : {};
                     let lowestPartnerCount = -1;
                     userIds.forEach( function( userId )
                     {
+                        const partnerPairedCount = primaryPairs[userId] || 0;
+                        
                         //store the least number of times a partner has had coffee with this user
-                        if ( !excludedUsers[userId] && userId !== primaryUserId && ( lowestPartnerCount < 0 || ( ( primaryPairs[userId] || 0 ) < lowestCoffeeCount ) ) )
+                        if ( !excludedUsers[userId] && userId !== primaryUserId && ( lowestPartnerCount < 0 || partnerPairedCount < lowestCoffeeCount ) )
                         {
-                            lowestPartnerCount = primaryPairs[userId] || 0;
+                            lowestPartnerCount = partnerPairedCount;
                         }
                     });
                 
@@ -79,7 +82,7 @@ const CoffeeModel = module.exports =
                     userIds.forEach( function( userId )
                     {
                         const pairCount = ( primaryPairs[userId] || 0 );
-                        if ( userId !== primaryUserId && pairCount <= lowestPartnerCount && !excludedUsers[userId] )
+                        if ( !excludedUsers[userId] && userId !== primaryUserId && pairCount <= lowestPartnerCount )
                         {
                             validPartners.push( userId );
                         }
