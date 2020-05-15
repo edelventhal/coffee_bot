@@ -6,6 +6,7 @@ const database = require( "../database.js" );
 const slack = require( "../utility/slackApi.js" );
 const users = require( "./users_model.js" );
 const constants = require( "../constants.js" );
+const userUtility = require( "../utility/user_utility.js" );
 
 const HISTORY_KEY = "history";
 const MESSAGE_KEY = "message";
@@ -13,6 +14,12 @@ const MESSAGE_KEY = "message";
 //handles hanging onto global stuff
 const CoffeeModel = module.exports =
 {
+    //schedules coffee between 2 people by pinging Slack
+    //channelId: a Slack channel ID to post the result.
+    //dryRun: If true, we won't actually @ users (useful for testing)
+    //cb: Callback once complete
+    //[user1Id]: If provided, will force the first user to have this ID
+    //[user2Id]: If provided, will force the second user to have this ID
     scheduleCoffee: function( channel, dryRun, cb, user1Id, user2Id )
     {
         database.get( HISTORY_KEY, function( historyString )
@@ -38,55 +45,25 @@ const CoffeeModel = module.exports =
                 users.getExcludedUsers( function( excludedUsers )
                 {
                     //find the lowest count of times any users has gotten coffee
-                    let lowestCoffeeCount = -1;
-                    userIds.forEach( function( userId )
-                    {
-                        const pairedCount = pastData.timesPaired[userId] || 0;
-                        if ( !excludedUsers[userId] && ( lowestCoffeeCount < 0 || pairedCount < lowestCoffeeCount ) )
-                        {
-                            lowestCoffeeCount = pairedCount;
-                        }
-                    });
+                    const lowestCoffeeCount = userUtility.findMinimumPairedCount( userIds, pastData.timesPaired, excludedUsers );
                 
                     //find the users that have had coffee the least number of times so we can choose one of them
-                    const lowestCountUsers = [];
-                    userIds.forEach( function( userId )
-                    {
-                        if ( ( pastData.timesPaired[userId] || 0 ) <= lowestCoffeeCount && !excludedUsers[userId] )
-                        {
-                            lowestCountUsers.push( userId );
-                        }
-                    });
+                    const lowestCountUsers = userUtility.findUsersPairedWithinRange( userIds, pastData.timesPaired, 0, lowestCoffeeCount, excludedUsers );
                 
                     //now that we know which users have had coffee the least times, choose a user to have coffee
                     const primaryUserIndex = Math.floor( Math.random() * lowestCountUsers.length );
                     const primaryUserId = user1Id || lowestCountUsers[primaryUserIndex];
+                    
+                    //we don't want to consider the first user as an option to pair with
                     lowestCountUsers.splice( primaryUserIndex, 1 );
                 
                     //and then choose a partner for that user by finding the lowest pair count among them and other users
                     //...this weird ternary below is to deal with an existing bug where we stored numbers in the db instead of objects
                     const primaryPairs = typeof( pastData.pairs[primaryUserId] ) === 'object' ? pastData.pairs[primaryUserId] : {};
-                    let lowestPartnerCount = -1;
-                    userIds.forEach( function( userId )
-                    {
-                        const partnerPairedCount = primaryPairs[userId] || 0;
-                        
-                        //store the least number of times a partner has had coffee with this user
-                        if ( !excludedUsers[userId] && userId !== primaryUserId && ( lowestPartnerCount < 0 || partnerPairedCount < lowestCoffeeCount ) )
-                        {
-                            lowestPartnerCount = partnerPairedCount;
-                        }
-                    });
+                    const lowestPartnerCount = userUtility.findMinimumPairedCount( lowestCountUsers, primaryPairs, excludedUsers );
                 
-                    const validPartners = [];
-                    userIds.forEach( function( userId )
-                    {
-                        const pairCount = ( primaryPairs[userId] || 0 );
-                        if ( !excludedUsers[userId] && userId !== primaryUserId && pairCount <= lowestPartnerCount )
-                        {
-                            validPartners.push( userId );
-                        }
-                    });
+                    //find all partners that fit this range
+                    const validPartners = userUtility.findUsersPairedWithinRange( lowestCountUsers, primaryPairs, 0, lowestPartnerCount, excludedUsers );
                 
                     //finally, choose their partner
                     const partnerUserId = user2Id || validPartners[Math.floor( Math.random() * validPartners.length )];
