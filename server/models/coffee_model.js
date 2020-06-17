@@ -56,6 +56,14 @@ const CoffeeModel = module.exports =
                     
                     //we don't want to consider the first user as an option to pair with
                     lowestCountUsers.splice( primaryUserIndex, 1 );
+                    
+                    //edge case - it's possible that there will be nobody left in the list. If that's so, then we need to expand it
+                    while ( lowestCountUsers.length <= 0 )
+                    {
+                        lowestCoffeeCount++;
+                        lowestCountUsers = userUtility.findUsersPairedWithinRange( userIds, pastData.timesPaired, 0, lowestCoffeeCount, excludedUsers );
+                        lowestCountUsers.splice( lowestCountUsers.indexOf( primaryUserId ), 1 );
+                    }
                 
                     //and then choose a partner for that user by finding the lowest pair count among them and other users
                     //...this weird ternary below is to deal with an existing bug where we stored numbers in the db instead of objects
